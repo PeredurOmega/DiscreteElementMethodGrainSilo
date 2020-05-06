@@ -52,13 +52,15 @@ for t=1:1:t_count
         y_half_time_speed_i=half_time_speed(:,2,i);
         
         %Calcul de la nouvelle position du grain i
-        %TODO
+        pos(:,1,i,t+1)=pos(:,1,i,t)+x_half_time_speed_i*dt;
+        pos(:,2,i,t+1)=pos(:,2,i,t)+y_half_time_speed_i*dt;
         
         %Calcul de la vitesse du grain i
-        %TODO
+        speed(:,1,i,t+1)=x_half_time_speed_i+acceleration(:,1,i,t)*dt;
+        speed(:,2,i,t+1)=y_half_time_speed_i+acceleration(:,2,i,t)*dt;
         
         %Mise à jour de l'allongement delta des ressorts tangentiels.
-        %TODO
+        
     end
     
     %Boucle sur tous les grains
@@ -147,4 +149,3 @@ for t=1:1:t_count
         %TODO
     end
 end
-
