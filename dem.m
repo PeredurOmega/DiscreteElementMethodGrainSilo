@@ -177,10 +177,14 @@ for t=1:1:t_count
             force_i(1)=force_i(1)+(vertical_silo_radius-x_grain_i)*k;
         end
         
-        %Calcul de l'accélération du grain i
+        %Calcul de l'accÃ©lÃ©ration du grain i
         %TODO
+        acceleration(:,1,i,t)=force_i(1)/m_grain ;
+        acceleration(:,2,i,t)=force_i(2)/m_grain ;
         
         %Calcul de la vitesse de demi pas de temps
         %TODO
+        x_half_time_speed_i=x_half_time_speed_i+acceleration(:,1,i,t)*dt;
+        y_half_time_speed_i=y_half_time_speed_i+acceleration(:,2,i,t)*dt;
     end
 end
