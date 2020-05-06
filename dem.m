@@ -10,6 +10,24 @@ r_grain = 0.0006;
 %Définition de la pesanteur;
 g=9.81;
 
+%Rayon du silo (partie verticale)
+vertical_silo_radius = 2;
+
+%Rayon du silo (partie écoulement)
+flow_silo_radius = 0.1;
+
+%Angle entre la partie oblique par rapport au sol (axe y=0).
+alpha = pi/4;
+
+%Nous considérons que le centre du silo se situe à x=0 et que à y=0 se
+%trouve la sortie du silo (partie où l'on mesure le débit d'écoulement).
+
+%Ainsi la paroi oblique droite va de Rse à Rsv en x et de 0 à
+%(Rsv-Rse)/cos(alpha) en y. Et la paroi de gauche va de -Rse à -Rsv en x
+%et de 0 à (Rse-Rsv)/cos(alpha) en y.
+y_right = @(x) (x-flow_silo_radius)*tan(alpha);
+y_left = @(x) (-x-flow_silo_radius)*tan(alpha);
+
 %Définition du pas de temps
 dt=0.001;
 
@@ -140,6 +158,23 @@ for t=1:1:t_count
             if k>neighboors_count
                 break;
             end
+        end
+        
+        %Détermination des contacts avec la paroi du silo
+        if x_grain_i >= flow_silo_radius && y_right(x_grain_i) >= y_grain_i
+            %Contact paroi droite
+            force_i(1)=force_i(1)+(flow_silo_radius-x_grain_i)*k;
+            force_i(2)=force_i(2)+(y_left(x_grain_i)-x_grain_i)*k;
+        elseif x_grain_i <= -flow_silo_radius && y_left(x_grain_i) >= y_grain_i
+            %Contact paroi gauche
+            force_i(1)=force_i(1)+(flow_silo_radius-x_grain_i)*k;
+            force_i(2)=force_i(2)+(y_left(x_grain_i)-x_grain_i)*k;
+        elseif x_grain_i >= vertical_silo_radius
+            %Contact paroi verticale droite
+            force_i(1)=force_i(1)+(vertical_silo_radius-x_grain_i)*k;
+        elseif x_grain_i <= -vertical_silo_radius
+            %Contact paroi verticale gauche
+            force_i(1)=force_i(1)+(vertical_silo_radius-x_grain_i)*k;
         end
         
         %Calcul de l'accélération du grain i
