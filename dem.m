@@ -27,6 +27,7 @@ for l=1:1:grain_count
 end
 speed=zeros(1,2,grain_count, t_count);
 acceleration=zeros(1,2,grain_count, t_count);
+half_time_speed=zeros(1,2,grain_count);
 
 %Définition de la période de mise à jour des voisinages
 update_period=10;
@@ -43,8 +44,13 @@ neighboors=-1.*ones(1,neighboors_count,grain_count);
 
 %Boucle principale en fonction du temps
 for t=1:1:t_count
+    
     %Boucle sur tous les grains
     for i=1:1:grain_count
+        %Récupération de la vitesse de demi-temps
+        x_half_time_speed_i=half_time_speed(:,1,i);
+        y_half_time_speed_i=half_time_speed(:,2,i);
+        
         %Calcul de la nouvelle position du grain i
         %TODO
         
@@ -54,6 +60,7 @@ for t=1:1:t_count
         %Mise à jour de l'allongement delta des ressorts tangentiels.
         %TODO
     end
+    
     %Boucle sur tous les grains
     for i=1:1:grain_count
         %Coordonnées du grain i
@@ -69,7 +76,7 @@ for t=1:1:t_count
             x_grain_j=pos(:,1,i,t);
             y_grain_ij=pos(:,2,i,t);
             
-            %Initialisation du comteur de voisins de i
+            %Initialisation du compteur de voisins de i
             neighboors_i_count=0;
             
             %Ajout des voisins
@@ -84,17 +91,51 @@ for t=1:1:t_count
         end
         
         %Application des efforts à distance (la pesanteur...TODO)
-        force_i=m_grain*g;
+        force_i=[0 m_grain*g];
         
         %Boucle sur tous les grains appartenant à la liste des voisins de i
         k=1;
         while 1
+            %Initialisation du voisin k
             neighboor=neighboors(k);
+            
+            %Si il n'y a pas de voinsi à la position k -> arrêt de la
+            %boucle
+            if neighboor == -1
+                break;
+            end
+            
             %Coordonnées du grain j (voisin / neighboor)
             x_grain_j=pos(:,1,neighboor,t);
             y_grain_j=pos(:,2,neighboor,t);
+            
+            %Calcul de la différence de distance entre les voisins
+            diff_x=x_grain_i-x_grain_j;
+            diff_y=y_grain_i-y_grain_j;
+            
+            %Application des forces de contacts en x sur i
+            if abs(diff_x) < r_grain
+                if diff_x < 0
+                    force_i(2)=force_i(2)+k*diff_x;
+                else
+                    force_i(2)=force_i(2)+k*diff_x;
+                end
+            end  
+            
+            %Application des forces de contacts en y sur i
+            if abs(diff_y) < r_grain
+                if diff_y < 0
+                    force_i(2)=force_i(2)+k*diff_y;
+                else
+                    force_i(2)=force_i(2)+k*diff_y;
+                end
+            end
+            
+            %Incrémentation de la boucle
             k=k+1;
-            if k>neighboors_count || neighboor==-1
+            
+            %Si tous les voisins ont été contrôlés -> arrêt de la boucle
+            if k>neighboors_count
                 break;
             end
         end
