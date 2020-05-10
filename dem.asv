@@ -50,7 +50,7 @@ t_end=10;
 t_count=t_end/dt;
 
 %Définition du nombre de grains
-grain_count=1000;
+grain_count=100;
 
 %Définition de la période de mise à jour des voisinages
 update_period=10;
@@ -120,15 +120,15 @@ for t=2:1:t_count
             %Ajout des voisins
             j = 1;
             while j<=grain_count && neighboors_i_count < neighboors_count
-                %Coordonnées du grain j
-                x_grain_j=grains(j).position.x;
-                y_grain_j=grains(j).position.y;
-                
-                if j==i || y_grain_j < -0.5
+                if j==i
                     %Incrémentation du compteur
                     j=j+1;
                     continue;
                 end
+                
+                %Coordonnées du grain j
+                x_grain_j=grains(j).position.x;
+                y_grain_j=grains(j).position.y;
                 
                 %Vérification du voisinage
                 if (abs(x_grain_j-x_grain_i) <= r_vicinity || abs(y_grain_j-y_grain_i) <= r_vicinity)
@@ -200,12 +200,14 @@ for t=2:1:t_count
                 %Contact paroi droite
                 diff_y=y_right(x_grain_i)-y_grain_i;
                 force_i.x=force_i.x-x_diff(diff_y)*stiffness_silo;
-                %force_i.y=force_i.y+diff_y*stiffness_silo;
+                force_i.y=force_i.y+diff_y*stiffness_silo;
+                diff_y-diff_x
             elseif x_grain_i <= -flow_silo_radius && y_left(x_grain_i) >= y_grain_i
                 %Contact paroi gauche
                 diff_y=y_left(x_grain_i)-y_grain_i;
                 force_i.x=force_i.x+x_diff(diff_y)*stiffness_silo;
-                %force_i.y=force_i.y+diff_y*stiffness_silo;
+                force_i.y=force_i.y+diff_y*stiffness_silo;
+                diff_y-diff_x
             elseif x_grain_i > vertical_silo_radius
                 %Contact paroi verticale droite
                 force_i.x=force_i.x+(vertical_silo_radius-x_grain_i)*stiffness_silo;

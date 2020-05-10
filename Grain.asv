@@ -1,0 +1,56 @@
+classdef Grain
+    %GRAIN Cette classe représente un objet grain
+    %   Elle permet d'améliorer la lisibilité du code par rapport à des
+    %   tenseurs ou des matrices et utilise les capacités de POO de MATLAB
+    
+    properties
+        mass=0.005; %Masse du grain
+        radius=0.0006; %Rayon du grain
+        position_x %Coordonnées x du grain
+        position_y %Coordonnées y du grain
+        speed_x=0; %Vitesse en x du grain
+        speed_y=0; %Vitesse en y du grain
+        half_time_speed_x=0; %Vitesse de demi temps en x
+        half_time_speed_y=0; %Vitesse de demi temps en y
+        acceleration_x=0; %Accélération en x du grain
+        acceleration_y=0; %Accélération en y du grain
+        grainDrawing; %Dessin du grain
+    end
+    
+    methods
+        function init_position(grain, position_x_0, position_y_0)
+            %Fonction pour initialiser la position 
+        end
+        
+        function grain = draw(grain)
+            %Fonction pour dessiner un grain
+            
+            %Récupération du facteur utiliser pour modéliser un grain
+            global draw_factor
+            
+            %Dessin du grain
+            grain.grainDrawing= plot(grain.position_x, grain.position_y, '.', 'Markersize', ((grain.radius)*(draw_factor)),'Color','blue');
+        end
+        
+        function grain = compute_new_grain(grain)
+            %Fonction pour calculer la nouvelle position et la nouvelle
+            %vitesse d'un grain en utilisant le schéma de Verlet
+            
+            %Récupération du pas de temps
+            global dt
+            
+            %Calcul de la nouvelle position en x
+            grain.position_x=grain.position_x+grain.half_time_speed_x*dt;
+            
+            %Calcul de la nouvelle position en y
+            grain.position_y=grain.position_y+grain.half_time_speed_y*dt;
+            
+            %Calcul de la nouvelle vitesse en x
+            grain.speed_x=grain.half_time_speed_x+grain.acceleration_x*(dt/2);
+            
+            %Calcul de la nouvelle vitesse en y
+            grain.speed_y=grain.half_time_speed_y+grain.acceleration_y*(dt/2);
+        end
+    end
+end
+
