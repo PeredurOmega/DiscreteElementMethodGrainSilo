@@ -2,26 +2,22 @@ clear all;
 close all;
 
 %Définition de la constante de raideur des parois du silo
-stiffness_silo = 10;
+stiffness_silo = 100;
 
 %Définition de la constante de raideur des grains
-stiffness_grain = 5;
-
-%Rayon d'un grain de blé sur le dessin
-global draw_factor
-draw_factor = 15/0.0006;
+stiffness_grain = 10;
 
 %Définition de la pesanteur
 g=9.81;
 
 %Hauteur de la partie verticale du silo
-vertical_silo_height=5;
+vertical_silo_height=5/5;
 
 %Rayon du silo (partie verticale)
-vertical_silo_radius=2;
+vertical_silo_radius=2/5;
 
 %Rayon du silo (partie écoulement)
-flow_silo_radius=0.1;
+flow_silo_radius=0.1/5;
 
 %Angle entre la partie oblique par rapport au sol (axe y=0)
 alpha=pi/4;
@@ -39,6 +35,10 @@ x_diff = @(y_diff) y_diff/tan(alpha);
 %Hauteur de la paroi oblique
 flow_silo_height=y_right(vertical_silo_radius);
 
+%Rayon d'un grain de blé sur le dessin
+global draw_factor
+draw_factor=15/(0.006);
+
 %Définition du pas de temps
 global dt
 dt=0.01;
@@ -50,7 +50,7 @@ t_end=10;
 t_count=t_end/dt;
 
 %Définition du nombre de grains
-grain_count=1000;
+grain_count=200;
 
 %Définition de la période de mise à jour des voisinages
 update_period=10;
@@ -81,13 +81,27 @@ axis equal
 % l'initialisation
 grains(grain_count)=Grain;
 
+%Génération des tailles des grains selon une distribution normale
+random_size = randn(1, grain_count);
+
+%Génération des masses par une distribution normale
+masses=0.005+random_size.*0.001;
+
+%Génération des rayons par une distribution normale
+radii=0.006+random_size.*0.001;
+
 for i=1:1:grain_count
     %Créer un grain avec x aléatoire entre le rayon du silo et moins le 
     %rayon du silo ety aléatoire entre 0 et la hauteur du silo
-    grains(i)=init_position(grains(i),(rand-0.5).*(2*vertical_silo_radius), (rand.*vertical_silo_height)+flow_silo_height);
+    grains(i)=init(grains(i),(rand-0.5).*(2*vertical_silo_radius), (rand.*vertical_silo_height)+flow_silo_height, masses(i), radii(i));
     %Dessin du grain i
     grains(i)=draw(grains(i));
 end
+
+%Supression des variables inutiles
+clear masses;
+clear radii;
+clear random_size;
 
 %Boucle principale en fonction du temps
 for t=2:1:t_count

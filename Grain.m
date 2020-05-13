@@ -4,22 +4,24 @@ classdef Grain
     %   tenseurs ou des matrices et utilise les capacités de POO de MATLAB
     
     properties
-        mass=0.005; %Masse du grain
-        radius=0.0006; %Rayon du grain
-        position=Pair(0,0); %Coordonnées du grain
+        mass=0.005; %Masse du grain en kg
+        radius=0.006; %Rayon du grain en mètres
+        position=Pair(0,0); %Coordonnées du grain en mètres
     end
     
     properties (Access = private)
-        speed=Pair(0,0); %Vitesse du grain
-        half_time_speed=Pair(0,0); %Vitesse de demi temps du grain
-        acceleration=Pair(0,0); %Accélération du grain
+        speed=Pair(0,0); %Vitesse du grain en mètres par seconde
+        half_time_speed=Pair(0,0); %Vitesse de demi temps du grain en m.s^-1
+        acceleration=Pair(0,0); %Accélération du grain en m.s^-2
         grain_drawing; %Dessin du grain
     end
     
     methods
-        function grain = init_position(grain, position_x_0, position_y_0)
-            %Fonction pour initialiser la position du grain
+        function grain = init(grain, position_x_0, position_y_0, mass, radius)
+            %Fonction pour initialiser la position, la masse et le rayon du grain
             grain.position=Pair(position_x_0, position_y_0);
+            grain.mass=mass;
+            grain.radius=radius;
         end
         
         function grain = draw(grain)
