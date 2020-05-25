@@ -7,10 +7,10 @@ classdef Grain
         mass=0.005; %Masse du grain en kg
         radius=0.006; %Rayon du grain en mètres
         position=Pair(0,0); %Coordonnées du grain en mètres
+        speed=Pair(0,0); %Vitesse du grain en mètres par seconde
     end
     
     properties (Access = private)
-        speed=Pair(0,0); %Vitesse du grain en mètres par seconde
         half_time_speed=Pair(0,0); %Vitesse de demi temps du grain en m.s^-1
         acceleration=Pair(0,0); %Accélération du grain en m.s^-2
         grain_drawing; %Dessin du grain
@@ -35,6 +35,19 @@ classdef Grain
             
             %Dessin du grain
             grain.grain_drawing=plot(grain.position.x, grain.position.y, '.', 'Markersize', ((grain.radius)*(draw_factor)),'Color','blue');
+        end
+        
+        function grain = redraw(grain, position_x, position_y)
+            %Fonction pour dessiner un grain
+            
+            %Suppresion du dessin de l'ancienne position
+            delete(grain.grain_drawing)
+            
+            %Récupération du facteur utiliser pour modéliser un grain
+            global draw_factor
+            
+            %Dessin du grain
+            grain.grain_drawing=plot(position_x, position_y, '.', 'Markersize', ((grain.radius)*(draw_factor)),'Color','blue');
         end
         
         function grain = compute_position_and_speed(grain)
