@@ -10,6 +10,6 @@ hold on
 line([-vertical_silo_radius -vertical_silo_radius], [y_left(-vertical_silo_radius) y_left(-vertical_silo_radius)+vertical_silo_height],'Color','red')
 hold on
 grid
-axis equal
+axis([-vertical_silo_radius-0.01 vertical_silo_radius+0.01 -0.05 vertical_silo_height+0.1])
 end
 

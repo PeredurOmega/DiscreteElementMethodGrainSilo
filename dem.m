@@ -3,10 +3,13 @@ close all;
 format short;
 
 %Pour charger un calcul déjà réalisé et ne pas le refaire
-load_previous_calculation=true;
+load_previous_calculation=false;
 
 %Pour afficher l'animation pendant le calcul true, sinon false
 runtime_drawing=false;
+
+%Pour intiliser à des positions aléatoire true, sinon false
+random_positions=false;
 
 %Rayon d'un grain de blé sur le dessin
 global draw_factor
@@ -18,7 +21,7 @@ if(load_previous_calculation == true)
     disp("Chargement des variables");
     
     %Chargement des variables
-    load('variables_0');
+    load('variables_2');
     
     disp("Variables chargées");
 
@@ -48,7 +51,6 @@ if(load_previous_calculation == true)
         for i=1:1:grain_size(1)
             grain_history(i, 1)=redraw(grain_history(i, 1), grain_history(i, t).position.x, grain_history(i, t).position.y);
         end
-        pause(0.1)
         drawnow
     end
 else
@@ -59,7 +61,7 @@ else
     mean_grain_mass=0.00005;
  
     %Définition du rayon moyen d'un grain en mètres
-    mean_grain_radius=0.006;
+    mean_grain_radius=0.002;
 
     %Définition de la constante de raideur des parois du silo
     stiffness_silo=100;
@@ -71,16 +73,16 @@ else
     g=9.81;
 
     %Hauteur de la partie verticale du silo
-    vertical_silo_height=1;
+    vertical_silo_height=0.268;
 
     %Rayon du silo (partie verticale)
-    vertical_silo_radius=1;
+    vertical_silo_radius=0.2275;
 
     %Rayon du silo (partie écoulement)
-    flow_silo_radius=0.1;
+    flow_silo_radius=0.05;
 
     %Angle entre la partie oblique par rapport au sol (axe y=0)
-    alpha=pi/6;
+    alpha=50*pi/180;
 
     %Nous considérons que le centre du silo se situe à x=0 et que à y=0 se
     %trouve la sortie du silo (partie où l'on mesure le débit d'écoulement)
@@ -99,19 +101,45 @@ else
     damping_coeff=0.03;
 
     %Rayon d'un grain de blé sur le dessin
-    draw_factor=15/(mean_grain_radius);
+    draw_factor=7.5/(mean_grain_radius);
 
     %Définition du pas de temps
     dt=sqrt(mean_grain_mass/stiffness_silo)/20;
 
     %Définition de la durée de la simulation
-    t_end=10;
+    t_end=2;
 
     %Définition du nombre d'itérations nécessaires sur le temps
     t_count=round(t_end/dt);
 
     %Définition du nombre de grains
-    grain_count=1000;
+    if(random_positions)
+        grain_count=1000;
+    else
+        %Positionnement des grains selon un empilement précis
+        grain_space=0.001;
+        x_init_max=vertical_silo_radius-grain_space-mean_grain_radius;
+        x_init_min=-x_init_max;
+        y_init_min=grain_space+mean_grain_radius;
+        y_init_max=vertical_silo_height/20-grain_space-mean_grain_radius+flow_silo_height;
+        y_init=y_init_max;
+        grain_count=0;
+        while y_init > y_init_min
+            if(y_init >= flow_silo_height)
+                x_init=x_init_min;
+            else
+                x_init=-x_diff(y_init)-flow_silo_radius+grain_space+mean_grain_radius;
+                x_init_max=-x_init;
+            end
+            
+            while x_init < x_init_max
+                x_init=x_init+2*mean_grain_radius+grain_space;
+                grain_count=grain_count+1;
+            end
+            y_init=y_init-2*mean_grain_radius-grain_space;
+         end 
+    end
+    disp(grain_count);
 
     %Définition de la période de mise à jour des voisinages
     update_period=10;
@@ -142,7 +170,7 @@ else
     masses=mean_grain_mass+random_size.*0.00001;
 
     %Génération des rayons par une distribution normale
-    radii=mean_grain_radius+random_size.*0.001;
+    radii=mean_grain_radius+random_size.*0.0005;
     if(runtime_drawing == false)
        %Pré allocation de la mémoire pour la sauvegarde des positions
        grain_history(grain_count, t_end*25)=Grain;
@@ -153,26 +181,60 @@ else
 
     fprintf('Heure de début du cacul: %s\n', datestr(now,'HH:MM:SS.FFF mm/dd/yy'))
 
-    %Boucle sur tous les grains
-    for i=1:1:grain_count
-        %Génération de la position x du grain i (aléatoire entre le rayon du
-        %silo et moins le rayon du silo)
-        x_grain_i=(rand-0.5).*(2*vertical_silo_radius);
+    if(random_positions)
+        %Boucle sur tous les grains
+        for i=1:1:grain_count
+            %Génération de la position x du grain i (aléatoire entre le rayon du
+            %silo et moins le rayon du silo)
+            x_grain_i=(rand-0.5).*(2*vertical_silo_radius);
 
-        %Génération de la position y du grain i (aléatoire entre 0 et la
-        %hauteur du silo)
-        y_grain_i=(rand.*vertical_silo_height)+flow_silo_height;
-        
-        %Initialisation du grain
-        grains(i)=init(grains(i),x_grain_i, y_grain_i, masses(i), radii(i));
-        
-        %Sauvegarde de la position initiale du grain dans l'historique
-        grain_history(i,1)=grains(i);
+            %Génération de la position y du grain i (aléatoire entre 0 et la
+            %hauteur du silo)
+            y_grain_i=(rand.*vertical_silo_height)+flow_silo_height;
 
-        if(runtime_drawing == true)
-            %Dessin du grain i
-            grains(i)=draw(grains(i));
+            %Initialisation du grain
+            grains(i)=init(grains(i),x_grain_i, y_grain_i, masses(i), radii(i));
+
+            %Sauvegarde de la position initiale du grain dans l'historique
+            grain_history(i,1)=grains(i);
+
+            if(runtime_drawing == true)
+                %Dessin du grain i
+                grains(i)=draw(grains(i));
+            end
         end
+    else
+        %Positionnement des grains selon un empilement précis
+        grain_space=0.001;
+        x_init_max=vertical_silo_radius-grain_space-mean_grain_radius;
+        x_init_min=-x_init_max;
+        y_init_min=grain_space+mean_grain_radius;
+        y_init_max=vertical_silo_height/20-grain_space-mean_grain_radius+flow_silo_height;
+        y_init=y_init_max;
+        i=1;
+        while y_init > y_init_min
+            if(y_init >= flow_silo_height)
+                x_init=x_init_min;
+            else
+                x_init=-x_diff(y_init)-flow_silo_radius+grain_space+mean_grain_radius;
+                x_init_max=-x_init;
+            end
+            
+            while x_init < x_init_max
+                %Initialisation du grain i
+                grains(i)=init(grains(i),x_init, y_init, masses(i), radii(i));
+                x_init=x_init+2*mean_grain_radius+grain_space;
+                i=i+1;
+            end
+            y_init=y_init-2*mean_grain_radius-grain_space;
+        end
+        clear x_init
+        clear y_init
+        clear x_init_max
+        clear y_init_max
+        clear x_init_min
+        clear y_init_min
+        clear grain_space
     end
 
     %Supression des variables inutiles
@@ -186,7 +248,9 @@ else
         for i=1:1:grain_count
             %Calcul de la nouvelle position et de la nouvelle vitesse du grain
             %i
-            grains(i)=compute_position_and_speed(grains(i));
+            if grains(i).position.y >= -0.05
+                grains(i)=compute_position_and_speed(grains(i));
+            end
         end
         
         %True si l'on doit sauvegarder l'image sinon false
@@ -199,8 +263,8 @@ else
             y_grain_i=grains(i).position.y;
             r_grain=grains(i).radius;
 
-            if y_grain_i < -0.5
-                if(mod(t,frames_rate * t_end) == 0)         
+            if y_grain_i < -0.05
+                if display_frame        
                     %Sauvegarde de la position du grain
                     grain_history(i,t / elapsed_time_between_frames)=grains(i);
                 end
@@ -294,28 +358,27 @@ else
 
             %Détermination des contacts avec la paroi du silo
             if y_grain_i > 0
-                if x_grain_i >= flow_silo_radius && y_right(x_grain_i) >= y_grain_i
+                if x_grain_i + r_grain >= flow_silo_radius && y_right(x_grain_i + r_grain) >= y_grain_i + r_grain
                     %Contact paroi droite
-                    diff_y=y_right(x_grain_i)-y_grain_i;
+                    diff_y=y_right(x_grain_i+r_grain)-y_grain_i-r_grain;
                     force_i.x=force_i.x-x_diff(diff_y)*stiffness_silo-grains(i).speed.x*damping_coeff;
                     force_i.y=force_i.y+diff_y*stiffness_silo-grains(i).speed.y*damping_coeff;
-                elseif x_grain_i <= -flow_silo_radius && y_left(x_grain_i) >= y_grain_i
+                elseif x_grain_i + r_grain <= -flow_silo_radius && y_left(x_grain_i + r_grain) >= y_grain_i + r_grain
                     %Contact paroi gauche
-                    diff_y=y_left(x_grain_i)-y_grain_i;
+                    diff_y=y_left(x_grain_i+r_grain)-y_grain_i-r_grain;
                     force_i.x=force_i.x+x_diff(diff_y)*stiffness_silo-grains(i).speed.x*damping_coeff;
                     force_i.y=force_i.y+diff_y*stiffness_silo-grains(i).speed.y*damping_coeff;
-                elseif x_grain_i > vertical_silo_radius
+                elseif x_grain_i + r_grain > vertical_silo_radius
                     %Contact paroi verticale droite
-                    force_i.x=force_i.x+(vertical_silo_radius-x_grain_i)*stiffness_silo;
-                elseif x_grain_i < -vertical_silo_radius
+                    force_i.x=force_i.x+(vertical_silo_radius-x_grain_i-r_grain)*stiffness_silo;
+                elseif x_grain_i - r_grain < -vertical_silo_radius
                     %Contact paroi verticale gauche
-                    force_i.x=force_i.x+(-x_grain_i-vertical_silo_radius)*stiffness_silo;
+                    force_i.x=force_i.x+(-x_grain_i-r_grain-vertical_silo_radius)*stiffness_silo;
                 end
             end
 
             %Calcul de la position du grain
             grains(i)=compute_acceleration_and_half_time_speed(grains(i), force_i);
-
             
             if(display_frame)
                 if(runtime_drawing == true)
@@ -330,6 +393,11 @@ else
 
         if(display_frame)
             fprintf('Avancement %.2f %%\n', (100 * t/t_count));
+            if((mod(t, elapsed_time_between_frames*25) == 0))
+                %Sauvegarde des variables
+                save('variables_1', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
+                disp("Sauvegarde des variables effectuée");
+            end
         end
         if(runtime_drawing == true)
             %Dessin de cet instant t
@@ -343,7 +411,7 @@ end
 
 if(runtime_drawing == false && load_previous_calculation == false)
     %Sauvegarde des variables
-    save('variables_0', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
+    save('variables_2', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
     disp("Sauvegarde des variables effectuée");
 end
 
