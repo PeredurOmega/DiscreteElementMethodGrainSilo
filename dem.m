@@ -11,6 +11,9 @@ runtime_drawing=false;
 %Pour intiliser à des positions aléatoire true, sinon false
 random_positions=false;
 
+%Pour passer le dessin lorsque l'on recharge les calculs true, sinon false
+skip_drawing=false;
+
 %Rayon d'un grain de blé sur le dessin
 global draw_factor
 
@@ -21,7 +24,7 @@ if(load_previous_calculation == true)
     disp("Chargement des variables");
     
     %Chargement des variables
-    load('variables_2');
+    load('variables_3');
     
     disp("Variables chargées");
 
@@ -46,10 +49,16 @@ if(load_previous_calculation == true)
     disp("Dessin du silo");
     
     grain_size=size(grain_history);
+    evacuated_grain_mass=zeros(grain_size(2),1);
     
     for t=1:1:grain_size(2)
         for i=1:1:grain_size(1)
-            grain_history(i, 1)=redraw(grain_history(i, 1), grain_history(i, t).position.x, grain_history(i, t).position.y);
+            if skip_drawing == false
+                grain_history(i, 1)=redraw(grain_history(i, 1), grain_history(i, t).position.x, grain_history(i, t).position.y);
+            end
+            if grain_history(i,t).position.y < 0
+                evacuated_grain_mass(t)=evacuated_grain_mass(t)+grain_history(i,1).mass;
+            end
         end
         drawnow
     end
@@ -61,7 +70,7 @@ else
     mean_grain_mass=0.00005;
  
     %Définition du rayon moyen d'un grain en mètres
-    mean_grain_radius=0.002;
+    mean_grain_radius=0.005;
 
     %Définition de la constante de raideur des parois du silo
     stiffness_silo=100;
@@ -107,7 +116,7 @@ else
     dt=sqrt(mean_grain_mass/stiffness_silo)/20;
 
     %Définition de la durée de la simulation
-    t_end=2;
+    t_end=20;
 
     %Définition du nombre d'itérations nécessaires sur le temps
     t_count=round(t_end/dt);
@@ -121,7 +130,7 @@ else
         x_init_max=vertical_silo_radius-grain_space-mean_grain_radius;
         x_init_min=-x_init_max;
         y_init_min=grain_space+mean_grain_radius;
-        y_init_max=vertical_silo_height/20-grain_space-mean_grain_radius+flow_silo_height;
+        y_init_max=vertical_silo_height*0.7-grain_space-mean_grain_radius+flow_silo_height;
         y_init=y_init_max;
         grain_count=0;
         while y_init > y_init_min
@@ -129,6 +138,9 @@ else
                 x_init=x_init_min;
             else
                 x_init=-x_diff(y_init)-flow_silo_radius+grain_space+mean_grain_radius;
+                if x_init<-vertical_silo_radius+grain_space+mean_grain_radius
+                    disp(-x_diff(y_init));
+                end
                 x_init_max=-x_init;
             end
             
@@ -148,7 +160,7 @@ else
     r_vicinity=0.5*g*(update_period*dt)^2;
 
     %Définition du nombre maximum de voisins
-    neighboors_count=10;
+    neighboors_count=100;
 
     %Initialisation de la matrice des voisins
     %-1 signifie qu'il n'y a pas de voisins
@@ -209,7 +221,7 @@ else
         x_init_max=vertical_silo_radius-grain_space-mean_grain_radius;
         x_init_min=-x_init_max;
         y_init_min=grain_space+mean_grain_radius;
-        y_init_max=vertical_silo_height/20-grain_space-mean_grain_radius+flow_silo_height;
+        y_init_max=vertical_silo_height*0.7-grain_space-mean_grain_radius+flow_silo_height;
         y_init=y_init_max;
         i=1;
         while y_init > y_init_min
@@ -223,6 +235,9 @@ else
             while x_init < x_init_max
                 %Initialisation du grain i
                 grains(i)=init(grains(i),x_init, y_init, masses(i), radii(i));
+                
+                %Sauvegarde de la position initiale du grain dans l'historique
+                grain_history(i,1)=grains(i);
                 x_init=x_init+2*mean_grain_radius+grain_space;
                 i=i+1;
             end
@@ -363,9 +378,9 @@ else
                     diff_y=y_right(x_grain_i+r_grain)-y_grain_i-r_grain;
                     force_i.x=force_i.x-x_diff(diff_y)*stiffness_silo-grains(i).speed.x*damping_coeff;
                     force_i.y=force_i.y+diff_y*stiffness_silo-grains(i).speed.y*damping_coeff;
-                elseif x_grain_i + r_grain <= -flow_silo_radius && y_left(x_grain_i + r_grain) >= y_grain_i + r_grain
+                elseif x_grain_i - r_grain <= -flow_silo_radius && y_left(x_grain_i - r_grain) >= y_grain_i + r_grain
                     %Contact paroi gauche
-                    diff_y=y_left(x_grain_i+r_grain)-y_grain_i-r_grain;
+                    diff_y=y_left(x_grain_i-r_grain)-y_grain_i-r_grain;
                     force_i.x=force_i.x+x_diff(diff_y)*stiffness_silo-grains(i).speed.x*damping_coeff;
                     force_i.y=force_i.y+diff_y*stiffness_silo-grains(i).speed.y*damping_coeff;
                 elseif x_grain_i + r_grain > vertical_silo_radius
@@ -386,7 +401,7 @@ else
                     grains(i)=draw(grains(i));
                 else
                     %Sauvegarde de la position du grain
-                    grain_history(i,t / elapsed_time_between_frames)=grains(i);
+                    grain_history(i,1 + (t / elapsed_time_between_frames))=grains(i);
                 end
             end
         end
@@ -395,7 +410,7 @@ else
             fprintf('Avancement %.2f %%\n', (100 * t/t_count));
             if((mod(t, elapsed_time_between_frames*25) == 0))
                 %Sauvegarde des variables
-                save('variables_1', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
+                save('variables_3', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
                 disp("Sauvegarde des variables effectuée");
             end
         end
@@ -411,7 +426,7 @@ end
 
 if(runtime_drawing == false && load_previous_calculation == false)
     %Sauvegarde des variables
-    save('variables_2', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
+    save('variables_3', 'grain_history', 'draw_factor', 'vertical_silo_height', 'vertical_silo_radius', 'flow_silo_radius', 'alpha', 'damping_coeff');
     disp("Sauvegarde des variables effectuée");
 end
 
